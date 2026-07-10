@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+**/.vite
+**/venv
+**/__pycache__
+*.txt
+!Backend/requirements.txt
+.git
