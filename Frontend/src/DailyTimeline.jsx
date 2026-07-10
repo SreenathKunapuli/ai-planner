@@ -13,7 +13,7 @@ const COLORS = [
 ];
 
 // Drag a block to move it, drag its top/bottom edge to resize, click to edit.
-export default function DailyTimeline({ items, onChange, onEditItem }) {
+export default function DailyTimeline({ items, onChange, onEditItem, onToggleDone }) {
   const [drag, setDrag] = useState(null); // {index, start, end}
   const gesture = useRef(null);
 
@@ -91,7 +91,7 @@ export default function DailyTimeline({ items, onChange, onEditItem }) {
           return (
             <div
               key={i}
-              className={`absolute left-1 right-2 rounded-lg border-l-4 px-2 py-1 text-sm text-white shadow-md cursor-grab active:cursor-grabbing select-none ${COLORS[i % COLORS.length]} ${live ? "opacity-90 ring-2 ring-white/40" : ""}`}
+              className={`absolute left-1 right-2 rounded-lg border-l-4 px-2 py-1 text-sm text-white shadow-md cursor-grab active:cursor-grabbing select-none ${COLORS[i % COLORS.length]} ${live ? "opacity-90 ring-2 ring-white/40" : ""} ${it.done && !live ? "opacity-40" : ""}`}
               style={{
                 top: (start / 60) * HOUR_PX,
                 height: Math.max(((end - start) / 60) * HOUR_PX, 20),
@@ -105,7 +105,21 @@ export default function DailyTimeline({ items, onChange, onEditItem }) {
                 className="absolute inset-x-0 top-0 h-2 cursor-ns-resize"
                 onPointerDown={(e) => startGesture(e, i, "resize-start")}
               />
-              <div className="font-medium truncate">{it.name}</div>
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onToggleDone(i); }}
+                title={it.done ? "Mark not done" : "Mark done"}
+                className={`absolute top-1 right-1 h-4 w-4 rounded-full border flex items-center justify-center text-[10px] leading-none transition ${
+                  it.done
+                    ? "bg-emerald-400 border-emerald-200 text-emerald-950"
+                    : "border-white/60 hover:bg-white/20"
+                }`}
+              >
+                {it.done ? "✓" : ""}
+              </button>
+              <div className={`font-medium truncate pr-5 ${it.done ? "line-through" : ""}`}>
+                {it.name}
+              </div>
               {end - start >= 45 && (
                 <div className="text-xs text-white/80">
                   {toTimeStr(start)} – {toTimeStr(end)}

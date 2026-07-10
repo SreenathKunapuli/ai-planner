@@ -11,6 +11,7 @@ export default function EditModal({ type, item, maxDay, onSave, onDelete, onClos
   const [end, setEnd] = useState(type === "daily" ? to24h(item.end) : "");
   const [day, setDay] = useState(item.day ?? 1);
   const [month, setMonth] = useState(item.month ?? 1);
+  const [done, setDone] = useState(item.done ?? false);
   const [err, setErr] = useState("");
 
   const save = () => {
@@ -19,12 +20,12 @@ export default function EditModal({ type, item, maxDay, onSave, onDelete, onClos
       if (!start || !end) return setErr("Start and end times are required.");
       const s = from24h(start), e = from24h(end);
       if (toMinutes(e) <= toMinutes(s)) return setErr("End must be after start.");
-      onSave({ name: name.trim(), start: s, end: e });
+      onSave({ name: name.trim(), start: s, end: e, done });
     } else if (type === "monthly") {
       const d = Math.min(Math.max(1, Number(day) || 1), maxDay);
-      onSave({ name: name.trim(), day: d });
+      onSave({ name: name.trim(), day: d, done });
     } else {
-      onSave({ name: name.trim(), month: Number(month) });
+      onSave({ name: name.trim(), month: Number(month), done });
     }
   };
 
@@ -73,6 +74,12 @@ export default function EditModal({ type, item, maxDay, onSave, onDelete, onClos
               </select>
             </label>
           )}
+
+          <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+            <input type="checkbox" checked={done} className="accent-emerald-500 h-4 w-4"
+              onChange={(e) => setDone(e.target.checked)} />
+            Completed
+          </label>
         </div>
 
         {err && <p className="text-red-400 text-sm mt-3">{err}</p>}

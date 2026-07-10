@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import DailyTimeline from "./DailyTimeline";
 import EditModal from "./EditModal";
+import { downloadICS } from "./ics";
 import MonthGrid from "./MonthGrid";
 import YearGrid from "./YearGrid";
 import { daysInMonth } from "./time";
@@ -16,7 +17,11 @@ const btn = "rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacit
 const inputCls =
   "rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500";
 
-const todayISO = () => new Date().toISOString().split("T")[0];
+// Local date, not UTC — toISOString() would shift the day near midnight.
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 
 function defaultPeriod(type) {
   const t = todayISO();
@@ -25,7 +30,7 @@ function defaultPeriod(type) {
   return t.slice(0, 4) + "-01-01";
 }
 
-function defaultNewItem(type, periodStart) {
+function defaultNewItem(type) {
   if (type === "daily") return { name: "New event", start: "9:00 AM", end: "10:00 AM" };
   if (type === "monthly") return { name: "New task", day: 1 };
   return { name: "New goal", month: 1 };
@@ -37,13 +42,16 @@ export default function PlannerPage() {
   const [events, setEvents] = useState([]);
   const [evName, setEvName] = useState("");
   const [evDuration, setEvDuration] = useState("");
+  const [nlText, setNlText] = useState("");
   const [requirement, setRequirement] = useState("");
   const [items, setItems] = useState(null);
+  const [prevItems, setPrevItems] = useState(null); // one-level undo after AI refine
+  const [refineText, setRefineText] = useState("");
   const [title, setTitle] = useState("");
   const [currentId, setCurrentId] = useState(null);
   const [saved, setSaved] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(null); // "generate" | "refine" | "parse" | "save"
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -57,14 +65,17 @@ export default function PlannerPage() {
 
   useEffect(() => { loadSaved(type); }, [type, loadSaved]);
 
+  const clearMessages = () => { setError(""); setNotice(""); };
+
   const switchTab = (t) => {
     setType(t);
     setPeriodStart(defaultPeriod(t));
     setItems(null);
+    setPrevItems(null);
     setCurrentId(null);
     setTitle("");
-    setError("");
-    setNotice("");
+    setEditIndex(null);
+    clearMessages();
   };
 
   const addEvent = () => {
@@ -74,23 +85,67 @@ export default function PlannerPage() {
     setEvDuration("");
   };
 
+  const parseNL = async () => {
+    if (!nlText.trim()) return;
+    setBusy("parse"); clearMessages();
+    try {
+      const data = await api.parseTasks(nlText);
+      if (!data.events.length) {
+        setError("Couldn't find any tasks in that text.");
+      } else {
+        setEvents([...events, ...data.events]);
+        setNlText("");
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const generate = async () => {
     if (events.length === 0) return setError("Add at least one task first.");
-    setBusy(true); setError(""); setNotice("");
+    setBusy("generate"); clearMessages();
     try {
       const data = await api.generate({ type, period_start: periodStart, events, requirement });
       setItems(data.items);
+      setPrevItems(null);
       setCurrentId(null);
       if (!title) setTitle(`${TABS.find(t => t.key === type).label} plan`);
     } catch (e) {
       setError(e.message);
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
+  const refine = async () => {
+    if (!refineText.trim() || !items?.length) return;
+    setBusy("refine"); clearMessages();
+    try {
+      const data = await api.refine({
+        type, period_start: periodStart, items, instruction: refineText,
+      });
+      setPrevItems(items);
+      setItems(data.items);
+      setRefineText("");
+      setNotice("Plan updated — Undo if it missed the mark.");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const undoRefine = () => {
+    if (!prevItems) return;
+    setItems(prevItems);
+    setPrevItems(null);
+    setNotice("Restored the previous plan.");
+  };
+
   const save = async () => {
-    setBusy(true); setError(""); setNotice("");
+    setBusy("save"); clearMessages();
     const body = { type, period_start: periodStart, title, requirement, items };
     try {
       if (currentId) {
@@ -104,17 +159,19 @@ export default function PlannerPage() {
     } catch (e) {
       setError(e.message);
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
-  const openSaved = (s) => {
+  const openSaved = (s, asCopy = false) => {
     setPeriodStart(s.period_start);
     setItems(s.items);
-    setTitle(s.title);
+    setPrevItems(null);
+    setTitle(asCopy && s.title ? `${s.title} (copy)` : s.title);
     setRequirement(s.requirement || "");
-    setCurrentId(s.id);
-    setError(""); setNotice("");
+    setCurrentId(asCopy ? null : s.id);
+    clearMessages();
+    if (asCopy) setNotice("Editing a copy — Save to keep it.");
   };
 
   const removeSaved = async (id) => {
@@ -128,6 +185,15 @@ export default function PlannerPage() {
     }
   };
 
+  const exportICS = () => {
+    if (!downloadICS(type, periodStart, items, title)) {
+      setError("Nothing exportable in this plan yet.");
+    }
+  };
+
+  const toggleDone = (i) =>
+    setItems(items.map((it, idx) => (idx === i ? { ...it, done: !it.done } : it)));
+
   const updateEditedItem = (updated) => {
     setItems(items.map((it, i) => (i === editIndex ? updated : it)));
     setEditIndex(null);
@@ -138,6 +204,7 @@ export default function PlannerPage() {
   };
 
   const View = { daily: DailyTimeline, monthly: MonthGrid, yearly: YearGrid }[type];
+  const doneCount = items?.filter((it) => it.done).length ?? 0;
 
   return (
     <div className="grid lg:grid-cols-[1fr_260px] gap-6">
@@ -156,11 +223,11 @@ export default function PlannerPage() {
         <div className="flex flex-wrap items-center gap-3 mb-4">
           {type === "daily" && (
             <input type="date" className={inputCls} value={periodStart}
-              onChange={(e) => setPeriodStart(e.target.value)} />
+              onChange={(e) => e.target.value && setPeriodStart(e.target.value)} />
           )}
           {type === "monthly" && (
             <input type="month" className={inputCls} value={periodStart.slice(0, 7)}
-              onChange={(e) => setPeriodStart(e.target.value + "-01")} />
+              onChange={(e) => e.target.value && setPeriodStart(e.target.value + "-01")} />
           )}
           {type === "yearly" && (
             <input type="number" min="2000" max="2100" className={inputCls + " w-28"}
@@ -189,6 +256,19 @@ export default function PlannerPage() {
               Add
             </button>
           </div>
+
+          {/* Natural-language quick add */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            <input className={inputCls + " flex-1 min-w-[200px]"} value={nlText}
+              placeholder='Or describe them all at once: "gym for an hour, 3h of studying, call mom"'
+              onChange={(e) => setNlText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && parseNL()} />
+            <button onClick={parseNL} disabled={busy !== null || !nlText.trim()}
+              className={`${btn} border border-indigo-700 text-indigo-300 hover:bg-indigo-950`}>
+              {busy === "parse" ? "Reading…" : "✨ Add with AI"}
+            </button>
+          </div>
+
           {events.length > 0 && (
             <ul className="flex flex-wrap gap-2 mb-3">
               {events.map((ev, i) => (
@@ -203,39 +283,85 @@ export default function PlannerPage() {
           <input className={inputCls + " w-full"} value={requirement}
             placeholder="Requirements (e.g. lunch break at noon, gym in the evening)"
             onChange={(e) => setRequirement(e.target.value)} />
-          <button onClick={generate} disabled={busy}
-            className={`${btn} bg-indigo-600 hover:bg-indigo-500 text-white mt-3`}>
-            {busy ? "Generating…" : "✨ Generate with AI"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <button onClick={generate} disabled={busy !== null}
+              className={`${btn} bg-indigo-600 hover:bg-indigo-500 text-white`}>
+              {busy === "generate" ? "Generating…" : "✨ Generate with AI"}
+            </button>
+            {events.length > 0 && (
+              <button onClick={() => setEvents([])}
+                className={`${btn} text-slate-500 hover:text-slate-300`}>
+                Clear tasks
+              </button>
+            )}
+          </div>
         </div>
 
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
-        {notice && <p className="text-emerald-400 text-sm mb-3">{notice}</p>}
+        {notice && (
+          <p className="text-emerald-400 text-sm mb-3">
+            {notice}
+            {prevItems && (
+              <button onClick={undoRefine} className="ml-2 underline hover:text-emerald-300">
+                Undo
+              </button>
+            )}
+          </p>
+        )}
 
         {/* Schedule view */}
-        {items && (
+        {items ? (
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <p className="text-xs text-slate-500">
                 Drag to move{type === "daily" ? ", stretch edges to resize" : ""}, click to edit.
+                {items.length > 0 && ` · ${doneCount}/${items.length} done`}
               </p>
               <div className="flex gap-2">
-                <button onClick={() => setItems([...items, defaultNewItem(type, periodStart)])}
+                <button onClick={() => setItems([...items, defaultNewItem(type)])}
                   className={`${btn} border border-slate-700 hover:bg-slate-800`}>
                   + Add item
                 </button>
-                <button onClick={save} disabled={busy}
+                {type !== "yearly" && items.length > 0 && (
+                  <button onClick={exportICS}
+                    className={`${btn} border border-slate-700 hover:bg-slate-800`}
+                    title="Download as .ics for Google/Apple Calendar">
+                    ⤓ Calendar
+                  </button>
+                )}
+                <button onClick={save} disabled={busy !== null}
                   className={`${btn} bg-emerald-600 hover:bg-emerald-500 text-white`}>
-                  {currentId ? "Update" : "Save"}
+                  {busy === "save" ? "Saving…" : currentId ? "Update" : "Save"}
                 </button>
               </div>
             </div>
+
             <View
               items={items}
               periodStart={periodStart}
               onChange={setItems}
               onEditItem={setEditIndex}
+              onToggleDone={toggleDone}
             />
+
+            {/* AI refine */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <input className={inputCls + " flex-1 min-w-[200px]"} value={refineText}
+                placeholder='Tell AI what to change: "move gym before lunch and add a reading block"'
+                onChange={(e) => setRefineText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && refine()} />
+              <button onClick={refine} disabled={busy !== null || !refineText.trim()}
+                className={`${btn} bg-violet-600 hover:bg-violet-500 text-white`}>
+                {busy === "refine" ? "Refining…" : "✨ Refine"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-800 py-16 text-center">
+            <p className="text-slate-500">Your schedule will appear here.</p>
+            <p className="text-slate-600 text-sm mt-1">
+              Add tasks above and let AI arrange them — or open a saved plan.
+            </p>
           </div>
         )}
       </div>
@@ -257,10 +383,18 @@ export default function PlannerPage() {
                 <span className="text-slate-400">{s.period_start}</span>
                 {s.title && <span className="ml-2">{s.title}</span>}
               </span>
-              <button onClick={(e) => { e.stopPropagation(); removeSaved(s.id); }}
-                className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition ml-2">
-                ✕
-              </button>
+              <span className="flex items-center shrink-0">
+                <button onClick={(e) => { e.stopPropagation(); openSaved(s, true); }}
+                  title="Duplicate"
+                  className="text-slate-600 hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition ml-2">
+                  ⧉
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); removeSaved(s.id); }}
+                  title="Delete"
+                  className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition ml-2">
+                  ✕
+                </button>
+              </span>
             </li>
           ))}
         </ul>

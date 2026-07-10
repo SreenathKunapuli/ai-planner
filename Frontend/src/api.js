@@ -22,6 +22,8 @@ async function request(method, path, body) {
 
 export const api = {
   generate: (body) => request("POST", "/api/generate", body),
+  refine: (body) => request("POST", "/api/refine", body),
+  parseTasks: (text) => request("POST", "/api/parse-tasks", { text }),
   listSchedules: (type) => request("GET", `/api/schedules?type=${type}`),
   createSchedule: (body) => request("POST", "/api/schedules", body),
   updateSchedule: (id, body) => request("PUT", `/api/schedules/${id}`, body),

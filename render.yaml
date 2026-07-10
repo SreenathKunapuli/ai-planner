@@ -3,6 +3,8 @@ services:
     name: ai-planner
     runtime: docker
     plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
     envVars:
       - key: GROQ_API_KEY
         sync: false
@@ -12,6 +14,8 @@ services:
         sync: false
       - key: SUPABASE_JWT_SECRET
         sync: false
+      # Render passes service env vars into the Docker build, where the
+      # Dockerfile declares matching ARGs for Vite to inline.
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_KEY

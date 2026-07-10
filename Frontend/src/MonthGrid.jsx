@@ -54,10 +54,10 @@ export default function MonthGrid({ periodStart, items, onChange, onEditItem }) 
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
                       onClick={() => onEditItem(i)}
-                      className={`${CHIP_COLORS[i % CHIP_COLORS.length]} rounded px-1.5 py-0.5 text-xs text-white truncate cursor-grab hover:brightness-110`}
+                      className={`${CHIP_COLORS[i % CHIP_COLORS.length]} rounded px-1.5 py-0.5 text-xs text-white truncate cursor-grab hover:brightness-110 ${it.done ? "opacity-40 line-through" : ""}`}
                       title={it.name}
                     >
-                      {it.name}
+                      {it.done ? "✓ " : ""}{it.name}
                     </div>
                   ) : null
                 )}

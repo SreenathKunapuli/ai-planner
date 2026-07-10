@@ -3,6 +3,9 @@
 **/.vite
 **/venv
 **/__pycache__
-*.txt
-!Backend/requirements.txt
+**/.env
+groqAPI.txt
+supabasepw.txt
 .git
+.github
+Backend/tests
