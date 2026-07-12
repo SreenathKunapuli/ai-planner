@@ -2,10 +2,11 @@ import { useState } from "react";
 import { daysInMonth, firstWeekday } from "./time";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const CHIP_COLORS = [
-  "bg-indigo-600/70", "bg-emerald-600/70", "bg-rose-600/70",
-  "bg-amber-600/70", "bg-cyan-600/70", "bg-violet-600/70",
-];
+
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 
 // Calendar grid; drag chips between days, click a chip to edit.
 export default function MonthGrid({ periodStart, items, onChange, onEditItem }) {
@@ -15,6 +16,8 @@ export default function MonthGrid({ periodStart, items, onChange, onEditItem }) 
   const cells = Array.from({ length: offset + total }, (_, i) =>
     i < offset ? null : i - offset + 1
   );
+  const t = todayISO();
+  const todayDay = t.slice(0, 7) === periodStart.slice(0, 7) ? Number(t.slice(8, 10)) : null;
 
   const dropOn = (day, e) => {
     e.preventDefault();
@@ -25,8 +28,8 @@ export default function MonthGrid({ periodStart, items, onChange, onEditItem }) 
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-2">
-      <div className="grid grid-cols-7 text-center text-xs text-slate-500 mb-1">
+    <div className="card p-2">
+      <div className="grid grid-cols-7 text-center text-[11px] text-faint mb-1">
         {WEEKDAYS.map((d) => <div key={d} className="py-1">{d}</div>)}
       </div>
       <div className="grid grid-cols-7 gap-1">
@@ -39,13 +42,15 @@ export default function MonthGrid({ periodStart, items, onChange, onEditItem }) 
               onDragOver={(e) => { e.preventDefault(); setOverDay(day); }}
               onDragLeave={() => setOverDay(null)}
               onDrop={(e) => dropOn(day, e)}
-              className={`min-h-[84px] rounded-lg border p-1 transition ${
-                overDay === day
-                  ? "border-indigo-500 bg-indigo-950/50"
-                  : "border-slate-800 bg-slate-900"
+              className={`min-h-[84px] rounded-md border-[0.5px] p-1 transition ${
+                overDay === day || day === todayDay
+                  ? "border-accent-line bg-accent-soft"
+                  : "border-line bg-surface"
               }`}
             >
-              <div className="text-xs text-slate-500 mb-1">{day}</div>
+              <div className={`text-[11px] mb-1 ${day === todayDay ? "text-accent font-medium" : "text-faint"}`}>
+                {day}
+              </div>
               <div className="space-y-1">
                 {items.map((it, i) =>
                   it.day === day ? (
@@ -54,10 +59,10 @@ export default function MonthGrid({ periodStart, items, onChange, onEditItem }) 
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
                       onClick={() => onEditItem(i)}
-                      className={`${CHIP_COLORS[i % CHIP_COLORS.length]} rounded px-1.5 py-0.5 text-xs text-white truncate cursor-grab hover:brightness-110 ${it.done ? "opacity-40 line-through" : ""}`}
+                      className={`tint-chip cat-${i % 6} truncate cursor-grab ${it.done ? "line-through opacity-50" : ""}`}
                       title={it.name}
                     >
-                      {it.done ? "✓ " : ""}{it.name}
+                      {it.name}
                     </div>
                   ) : null
                 )}

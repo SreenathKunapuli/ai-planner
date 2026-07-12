@@ -1,6 +1,8 @@
 .env
 groqAPI.txt
 supabasepw.txt
+# design scratch / mockups at repo root (the app's html lives in Frontend/)
+/*.html
 venv/
 __pycache__/
 node_modules/

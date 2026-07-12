@@ -1,7 +1,9 @@
+import { IconCalendarEvent } from "@tabler/icons-react";
 import { AuthProvider, useAuth } from "./AuthContext";
 import ErrorBoundary from "./ErrorBoundary";
 import Login from "./Login";
 import PlannerPage from "./PlannerPage";
+import ThemeToggle from "./ThemeToggle";
 import UpdatePassword from "./UpdatePassword";
 
 function Shell() {
@@ -9,7 +11,7 @@ function Shell() {
 
   if (session === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">
+      <div className="min-h-screen grid place-items-center bg-canvas text-faint">
         Loading…
       </div>
     );
@@ -18,23 +20,19 @@ function Shell() {
   if (recovery) return <UpdatePassword />;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src="/favicon.svg" alt="" className="h-6 w-6" />
-            <h1 className="font-semibold text-lg">
-              AI <span className="text-indigo-400">Planner</span>
+    <div className="min-h-screen bg-canvas text-ink">
+      <header className="sticky top-0 z-20 border-b-[0.5px] border-line bg-surface">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <IconCalendarEvent size={20} className="text-accent" />
+            <h1 className="font-medium text-[15px] tracking-tight">
+              AI <span className="text-accent">Planner</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-slate-400 hidden sm:inline">{user.email}</span>
-            <button
-              onClick={signOut}
-              className="rounded-lg border border-slate-700 px-3 py-1.5 hover:bg-slate-800 transition"
-            >
-              Sign out
-            </button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="text-faint hidden sm:inline text-[13px]">{user.email}</span>
+            <button onClick={signOut} className="btn btn-ghost">Sign out</button>
           </div>
         </div>
       </header>

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { MONTHS } from "./time";
 
-const CHIP_COLORS = [
-  "bg-indigo-600/70", "bg-emerald-600/70", "bg-rose-600/70",
-  "bg-amber-600/70", "bg-cyan-600/70", "bg-violet-600/70",
-];
-
 // 12-month grid; drag chips between months, click a chip to edit.
-export default function YearGrid({ items, onChange, onEditItem }) {
+export default function YearGrid({ periodStart, items, onChange, onEditItem }) {
   const [overMonth, setOverMonth] = useState(null);
+  const now = new Date();
+  const nowMonth =
+    periodStart && Number(periodStart.slice(0, 4)) === now.getFullYear()
+      ? now.getMonth() + 1
+      : null;
 
   const dropOn = (month, e) => {
     e.preventDefault();
@@ -28,13 +28,17 @@ export default function YearGrid({ items, onChange, onEditItem }) {
             onDragOver={(e) => { e.preventDefault(); setOverMonth(month); }}
             onDragLeave={() => setOverMonth(null)}
             onDrop={(e) => dropOn(month, e)}
-            className={`min-h-[110px] rounded-xl border p-2 transition ${
+            className={`min-h-[110px] rounded-xl border-[0.5px] p-2 transition ${
               overMonth === month
-                ? "border-indigo-500 bg-indigo-950/50"
-                : "border-slate-800 bg-slate-900/50"
+                ? "border-accent-line bg-accent-soft"
+                : month === nowMonth
+                ? "border-accent-line bg-surface"
+                : "border-line bg-surface"
             }`}
           >
-            <div className="text-sm font-medium text-slate-300 mb-1.5">{name}</div>
+            <div className={`text-sm font-medium mb-1.5 ${month === nowMonth ? "text-accent" : "text-ink"}`}>
+              {name}
+            </div>
             <div className="space-y-1">
               {items.map((it, i) =>
                 it.month === month ? (
@@ -43,10 +47,10 @@ export default function YearGrid({ items, onChange, onEditItem }) {
                     draggable
                     onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
                     onClick={() => onEditItem(i)}
-                    className={`${CHIP_COLORS[i % CHIP_COLORS.length]} rounded px-1.5 py-0.5 text-xs text-white truncate cursor-grab hover:brightness-110 ${it.done ? "opacity-40 line-through" : ""}`}
+                    className={`tint-chip cat-${i % 6} truncate cursor-grab ${it.done ? "line-through opacity-50" : ""}`}
                     title={it.name}
                   >
-                    {it.done ? "✓ " : ""}{it.name}
+                    {it.name}
                   </div>
                 ) : null
               )}

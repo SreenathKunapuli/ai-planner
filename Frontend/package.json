@@ -11,7 +11,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
     "@supabase/supabase-js": "^2.110.1",
+    "@tabler/icons-react": "^3.44.0",
     "@tailwindcss/vite": "^4.1.11",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { IconCalendarPlus, IconCopy, IconPlus, IconX } from "@tabler/icons-react";
 import { api } from "./api";
 import DailyTimeline from "./DailyTimeline";
 import EditModal from "./EditModal";
@@ -12,10 +13,6 @@ const TABS = [
   { key: "monthly", label: "Monthly" },
   { key: "yearly", label: "Yearly" },
 ];
-
-const btn = "rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50";
-const inputCls =
-  "rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500";
 
 // Local date, not UTC — toISOString() would shift the day near midnight.
 const todayISO = () => {
@@ -210,10 +207,11 @@ export default function PlannerPage() {
     <div className="grid lg:grid-cols-[1fr_260px] gap-6">
       <div>
         {/* Tabs */}
-        <div className="flex gap-1 rounded-xl bg-slate-900 border border-slate-800 p-1 w-fit mb-5">
+        <div className="flex gap-1 rounded-xl bg-surface border-[0.5px] border-line p-1 w-fit mb-5">
           {TABS.map((t) => (
             <button key={t.key} onClick={() => switchTab(t.key)}
-              className={`${btn} ${type === t.key ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"}`}>
+              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+                type === t.key ? "bg-sunken text-ink" : "text-dim hover:text-ink"}`}>
               {t.label}
             </button>
           ))}
@@ -222,87 +220,85 @@ export default function PlannerPage() {
         {/* Period picker */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           {type === "daily" && (
-            <input type="date" className={inputCls} value={periodStart}
+            <input type="date" className="field w-auto" value={periodStart}
               onChange={(e) => e.target.value && setPeriodStart(e.target.value)} />
           )}
           {type === "monthly" && (
-            <input type="month" className={inputCls} value={periodStart.slice(0, 7)}
+            <input type="month" className="field w-auto" value={periodStart.slice(0, 7)}
               onChange={(e) => e.target.value && setPeriodStart(e.target.value + "-01")} />
           )}
           {type === "yearly" && (
-            <input type="number" min="2000" max="2100" className={inputCls + " w-28"}
+            <input type="number" min="2000" max="2100" className="field w-28"
               value={periodStart.slice(0, 4)}
               onChange={(e) => setPeriodStart(`${e.target.value}-01-01`)} />
           )}
-          <input className={inputCls + " flex-1 min-w-[160px]"} value={title}
+          <input className="field flex-1 min-w-[160px]" value={title}
             placeholder="Plan title (optional)" onChange={(e) => setTitle(e.target.value)} />
         </div>
 
         {/* Task input */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 mb-4">
-          <h3 className="text-sm font-medium text-slate-300 mb-3">
+        <div className="card p-4 mb-4">
+          <h3 className="text-sm font-medium text-dim mb-3">
             {type === "daily" ? "Events / tasks for the day"
               : type === "monthly" ? "Tasks for the month"
               : "Goals for the year"}
           </h3>
           <div className="flex flex-wrap gap-2 mb-3">
-            <input className={inputCls + " flex-1 min-w-[140px]"} value={evName}
+            <input className="field flex-1 min-w-[140px]" value={evName}
               placeholder="Name" onChange={(e) => setEvName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addEvent()} />
-            <input className={inputCls + " w-40"} value={evDuration}
+            <input className="field w-40" value={evDuration}
               placeholder="Time needed (e.g. 2h)" onChange={(e) => setEvDuration(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addEvent()} />
-            <button onClick={addEvent} className={`${btn} bg-slate-700 hover:bg-slate-600 text-white`}>
-              Add
-            </button>
+            <button onClick={addEvent} className="btn btn-soft"><IconPlus size={15} stroke={1.75} /> Add</button>
           </div>
 
           {/* Natural-language quick add */}
           <div className="flex flex-wrap gap-2 mb-3">
-            <input className={inputCls + " flex-1 min-w-[200px]"} value={nlText}
+            <input className="field flex-1 min-w-[200px]" value={nlText}
               placeholder='Or describe them all at once: "gym for an hour, 3h of studying, call mom"'
               onChange={(e) => setNlText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && parseNL()} />
             <button onClick={parseNL} disabled={busy !== null || !nlText.trim()}
-              className={`${btn} border border-indigo-700 text-indigo-300 hover:bg-indigo-950`}>
-              {busy === "parse" ? "Reading…" : "✨ Add with AI"}
+              className="btn btn-soft">
+              {busy === "parse" ? "Reading…" : "Add from text"}
             </button>
           </div>
 
           {events.length > 0 && (
             <ul className="flex flex-wrap gap-2 mb-3">
               {events.map((ev, i) => (
-                <li key={i} className="flex items-center gap-1.5 rounded-full bg-slate-800 border border-slate-700 pl-3 pr-1.5 py-1 text-sm">
-                  {ev.name}{ev.duration && <span className="text-slate-400">· {ev.duration}</span>}
+                <li key={i} className="chip pr-1.5">
+                  {ev.name}{ev.duration && <span className="text-faint">· {ev.duration}</span>}
                   <button onClick={() => setEvents(events.filter((_, j) => j !== i))}
-                    className="text-slate-500 hover:text-red-400 px-1">×</button>
+                    className="text-faint hover:text-red-500 transition" aria-label="Remove task">
+                    <IconX size={14} stroke={1.75} />
+                  </button>
                 </li>
               ))}
             </ul>
           )}
-          <input className={inputCls + " w-full"} value={requirement}
+          <input className="field w-full" value={requirement}
             placeholder="Requirements (e.g. lunch break at noon, gym in the evening)"
             onChange={(e) => setRequirement(e.target.value)} />
           <div className="flex flex-wrap items-center gap-2 mt-3">
-            <button onClick={generate} disabled={busy !== null}
-              className={`${btn} bg-indigo-600 hover:bg-indigo-500 text-white`}>
-              {busy === "generate" ? "Generating…" : "✨ Generate with AI"}
+            <button onClick={generate} disabled={busy !== null} className="btn btn-primary">
+              {busy === "generate" ? "Generating…" : "Generate"}
             </button>
             {events.length > 0 && (
-              <button onClick={() => setEvents([])}
-                className={`${btn} text-slate-500 hover:text-slate-300`}>
+              <button onClick={() => setEvents([])} className="text-sm text-faint hover:text-ink transition px-2">
                 Clear tasks
               </button>
             )}
           </div>
         </div>
 
-        {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         {notice && (
-          <p className="text-emerald-400 text-sm mb-3">
+          <p className="text-success text-sm mb-3">
             {notice}
             {prevItems && (
-              <button onClick={undoRefine} className="ml-2 underline hover:text-emerald-300">
+              <button onClick={undoRefine} className="ml-2 underline hover:opacity-80">
                 Undo
               </button>
             )}
@@ -313,24 +309,21 @@ export default function PlannerPage() {
         {items ? (
           <div>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-faint">
                 Drag to move{type === "daily" ? ", stretch edges to resize" : ""}, click to edit.
                 {items.length > 0 && ` · ${doneCount}/${items.length} done`}
               </p>
               <div className="flex gap-2">
-                <button onClick={() => setItems([...items, defaultNewItem(type)])}
-                  className={`${btn} border border-slate-700 hover:bg-slate-800`}>
-                  + Add item
+                <button onClick={() => setItems([...items, defaultNewItem(type)])} className="btn btn-soft">
+                  <IconPlus size={15} stroke={1.75} /> Add item
                 </button>
                 {type !== "yearly" && items.length > 0 && (
-                  <button onClick={exportICS}
-                    className={`${btn} border border-slate-700 hover:bg-slate-800`}
+                  <button onClick={exportICS} className="btn btn-soft"
                     title="Download as .ics for Google/Apple Calendar">
-                    ⤓ Calendar
+                    <IconCalendarPlus size={15} stroke={1.75} /> Calendar
                   </button>
                 )}
-                <button onClick={save} disabled={busy !== null}
-                  className={`${btn} bg-emerald-600 hover:bg-emerald-500 text-white`}>
+                <button onClick={save} disabled={busy !== null} className="btn btn-primary">
                   {busy === "save" ? "Saving…" : currentId ? "Update" : "Save"}
                 </button>
               </div>
@@ -346,20 +339,19 @@ export default function PlannerPage() {
 
             {/* AI refine */}
             <div className="flex flex-wrap gap-2 mt-3">
-              <input className={inputCls + " flex-1 min-w-[200px]"} value={refineText}
+              <input className="field flex-1 min-w-[200px]" value={refineText}
                 placeholder='Tell AI what to change: "move gym before lunch and add a reading block"'
                 onChange={(e) => setRefineText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && refine()} />
-              <button onClick={refine} disabled={busy !== null || !refineText.trim()}
-                className={`${btn} bg-violet-600 hover:bg-violet-500 text-white`}>
-                {busy === "refine" ? "Refining…" : "✨ Refine"}
+              <button onClick={refine} disabled={busy !== null || !refineText.trim()} className="btn btn-primary">
+                {busy === "refine" ? "Refining…" : "Refine"}
               </button>
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-slate-800 py-16 text-center">
-            <p className="text-slate-500">Your schedule will appear here.</p>
-            <p className="text-slate-600 text-sm mt-1">
+          <div className="rounded-xl border-[0.5px] border-dashed border-line py-16 text-center">
+            <p className="text-dim">Your schedule will appear here.</p>
+            <p className="text-faint text-sm mt-1">
               Add tasks above and let AI arrange them — or open a saved plan.
             </p>
           </div>
@@ -368,31 +360,31 @@ export default function PlannerPage() {
 
       {/* Saved schedules */}
       <aside>
-        <h3 className="text-sm font-medium text-slate-300 mb-2">Saved {type} plans</h3>
-        {saved.length === 0 && <p className="text-sm text-slate-600">Nothing saved yet.</p>}
+        <h3 className="text-sm font-medium text-dim mb-2">Saved {type} plans</h3>
+        {saved.length === 0 && <p className="text-sm text-faint">Nothing saved yet.</p>}
         <ul className="space-y-1.5">
           {saved.map((s) => (
             <li key={s.id}
-              className={`group flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer transition ${
+              className={`group flex items-center justify-between rounded-lg border-[0.5px] px-3 py-2 text-sm cursor-pointer transition ${
                 s.id === currentId
-                  ? "border-indigo-500 bg-indigo-950/40"
-                  : "border-slate-800 bg-slate-900/50 hover:border-slate-600"
+                  ? "border-accent-line bg-accent-soft"
+                  : "border-line bg-surface hover:border-line-strong"
               }`}
               onClick={() => openSaved(s)}>
               <span className="truncate">
-                <span className="text-slate-400">{s.period_start}</span>
-                {s.title && <span className="ml-2">{s.title}</span>}
+                <span className="text-faint">{s.period_start}</span>
+                {s.title && <span className="ml-2 text-ink">{s.title}</span>}
               </span>
               <span className="flex items-center shrink-0">
                 <button onClick={(e) => { e.stopPropagation(); openSaved(s, true); }}
-                  title="Duplicate"
-                  className="text-slate-600 hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition ml-2">
-                  ⧉
+                  title="Duplicate" aria-label="Duplicate"
+                  className="text-faint hover:text-accent opacity-0 group-hover:opacity-100 transition ml-2">
+                  <IconCopy size={15} stroke={1.75} />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); removeSaved(s.id); }}
-                  title="Delete"
-                  className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition ml-2">
-                  ✕
+                  title="Delete" aria-label="Delete"
+                  className="text-faint hover:text-red-500 opacity-0 group-hover:opacity-100 transition ml-2">
+                  <IconX size={15} stroke={1.75} />
                 </button>
               </span>
             </li>

@@ -1,22 +1,138 @@
 @import 'tailwindcss';
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+/* make `dark:` respond to <html data-theme="dark"> (used sparingly; most tokens auto-swap) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* semantic color tokens -> Tailwind utilities (bg-surface, text-faint, border-line, …)
+   `inline` makes utilities emit var(--x) so they follow the active theme. */
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface-2);
+  --color-sunken: var(--surface-1);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--text-primary);
+  --color-dim: var(--text-secondary);
+  --color-faint: var(--text-muted);
+  --color-accent: var(--text-accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--bg-accent);
+  --color-accent-line: var(--border-accent);
+  --color-success: var(--text-success);
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+:root, :root[data-theme="light"] {
+  --bg: #FCFCFD;
+  --surface-1: #F4F4F5;
+  --surface-2: #FFFFFF;
+  --border: #E4E4E7;
+  --border-strong: #D3D3D8;
+  --text-primary: #1A1A1F;
+  --text-secondary: #55555E;
+  --text-muted: #6C6C76;
+  --text-accent: #534AB7;
+  --on-accent: #FFFFFF;
+  --bg-accent: #EEEDFE;
+  --border-accent: #C3BEF0;
+  --text-success: #148A63;
+  --picker-filter: none;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0B0B0D;
+  --surface-1: #161619;
+  --surface-2: #101013;
+  --border: #26262B;
+  --border-strong: #35353C;
+  --text-primary: #ECECEF;
+  --text-secondary: #A6A6B0;
+  --text-muted: #85858F;
+  --text-accent: #ABA4F2;
+  --on-accent: #1A1533;
+  --bg-accent: #1C1930;
+  --border-accent: #423B7A;
+  --text-success: #34D399;
+  --picker-filter: invert(0.85);
   color-scheme: dark;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
 }
 
+/* muted category hues, cycled for schedule items */
+.cat-0 { --cat: #534AB7; }
+.cat-1 { --cat: #C6552E; }
+.cat-2 { --cat: #1D9E75; }
+.cat-3 { --cat: #C24C77; }
+.cat-4 { --cat: #2F7FCC; }
+.cat-5 { --cat: #7C6F9E; }
+
+html, body { margin: 0; }
 body {
-  margin: 0;
-  background-color: #020617; /* slate-950 */
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
 }
 
-/* Dark styling for native date/time picker icons */
+/* shared components (hairline borders, flat, editorial) */
+@layer components {
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+    border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 500;
+    transition: background .12s, border-color .12s, color .12s, opacity .12s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--text-accent); color: var(--on-accent); }
+  .btn-primary:hover { background: color-mix(in srgb, var(--text-accent) 88%, #000); }
+  .btn-soft { border: 0.5px solid var(--border); background: var(--surface-2); color: var(--text-secondary); }
+  .btn-soft:hover { background: var(--surface-1); color: var(--text-primary); }
+  .btn-ghost { border: 0.5px solid var(--border); background: transparent; color: var(--text-secondary); }
+  .btn-ghost:hover { background: var(--surface-1); color: var(--text-primary); }
+  .btn:disabled { opacity: .5; pointer-events: none; }
+
+  .field {
+    width: 100%; border: 0.5px solid var(--border); background: var(--surface-2);
+    border-radius: 8px; padding: 8px 11px; font-size: 13px; color: var(--text-primary);
+    outline: none; transition: border-color .12s;
+  }
+  .field:focus { border-color: var(--border-accent); }
+  .field::placeholder { color: var(--text-muted); }
+
+  .card { border: 0.5px solid var(--border); background: var(--surface-2); border-radius: 12px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12px;
+    padding: 5px 10px; border-radius: 6px; background: var(--surface-1); color: var(--text-primary);
+  }
+  .chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cat, var(--text-accent)); flex: none; }
+
+  /* tinted pill for month/year schedule items */
+  .tint-chip {
+    display: block; border-radius: 6px; padding: 3px 8px; font-size: 12px;
+    background: color-mix(in srgb, var(--cat, var(--text-accent)) 13%, var(--surface-2));
+    color: color-mix(in srgb, var(--cat, var(--text-accent)) 34%, var(--text-primary));
+  }
+  .tint-chip:hover { background: color-mix(in srgb, var(--cat, var(--text-accent)) 20%, var(--surface-2)); }
+
+  /* draggable block on the daily timeline */
+  .timeblock {
+    background: color-mix(in srgb, var(--cat, var(--text-accent)) 15%, var(--surface-2));
+    border: 0.5px solid var(--border);
+    border-inline-start: 2.5px solid var(--cat, var(--text-accent));
+    color: color-mix(in srgb, var(--cat, var(--text-accent)) 42%, var(--text-primary));
+  }
+}
+
+:root[data-theme="dark"] .tint-chip { color: color-mix(in srgb, var(--cat, var(--text-accent)) 58%, var(--text-primary)); }
+:root[data-theme="dark"] .timeblock { color: color-mix(in srgb, var(--cat, var(--text-accent)) 64%, var(--text-primary)); }
+
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--text-accent); outline-offset: 2px;
+}
+
+/* theme-aware native date/time picker icons */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="month"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.7);
+  filter: var(--picker-filter);
 }

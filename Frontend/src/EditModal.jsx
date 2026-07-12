@@ -1,8 +1,6 @@
 import { useState } from "react";
+import { IconX } from "@tabler/icons-react";
 import { MONTHS, from24h, to24h, toMinutes } from "./time";
-
-const inputCls =
-  "w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-white focus:outline-none focus:border-indigo-500";
 
 // Edits one schedule item. Fields shown depend on planner type.
 export default function EditModal({ type, item, maxDay, onSave, onDelete, onClose }) {
@@ -31,42 +29,48 @@ export default function EditModal({ type, item, maxDay, onSave, onDelete, onClos
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-700 p-5 shadow-2xl">
-        <h3 className="font-semibold mb-4">Edit item</h3>
+      <div className="card w-full max-w-sm rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-medium text-ink">Edit item</h3>
+          <button onClick={onClose}
+            className="text-dim hover:text-ink transition">
+            <IconX size={16} stroke={1.75} />
+          </button>
+        </div>
         <div className="space-y-3">
-          <input className={inputCls} value={name} placeholder="Name"
+          <input className="field" value={name} placeholder="Name"
             onChange={(e) => setName(e.target.value)} autoFocus />
 
           {type === "daily" && (
             <div className="flex gap-3">
-              <label className="flex-1 text-sm text-slate-400">
+              <label className="flex-1 text-sm text-dim">
                 Start
-                <input type="time" className={inputCls + " mt-1"} value={start}
+                <input type="time" className="field mt-1" value={start}
                   onChange={(e) => setStart(e.target.value)} />
               </label>
-              <label className="flex-1 text-sm text-slate-400">
+              <label className="flex-1 text-sm text-dim">
                 End
-                <input type="time" className={inputCls + " mt-1"} value={end}
+                <input type="time" className="field mt-1" value={end}
                   onChange={(e) => setEnd(e.target.value)} />
               </label>
             </div>
           )}
 
           {type === "monthly" && (
-            <label className="block text-sm text-slate-400">
+            <label className="block text-sm text-dim">
               Day of month
-              <input type="number" min={1} max={maxDay} className={inputCls + " mt-1"}
+              <input type="number" min={1} max={maxDay} className="field mt-1"
                 value={day} onChange={(e) => setDay(e.target.value)} />
             </label>
           )}
 
           {type === "yearly" && (
-            <label className="block text-sm text-slate-400">
+            <label className="block text-sm text-dim">
               Month
-              <select className={inputCls + " mt-1"} value={month}
+              <select className="field mt-1" value={month}
                 onChange={(e) => setMonth(e.target.value)}>
                 {MONTHS.map((m, i) => (
                   <option key={m} value={i + 1}>{m}</option>
@@ -75,27 +79,25 @@ export default function EditModal({ type, item, maxDay, onSave, onDelete, onClos
             </label>
           )}
 
-          <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
-            <input type="checkbox" checked={done} className="accent-emerald-500 h-4 w-4"
+          <label className="flex items-center gap-2 text-sm text-dim cursor-pointer">
+            <input type="checkbox" checked={done} className="accent-accent h-4 w-4"
               onChange={(e) => setDone(e.target.checked)} />
             Completed
           </label>
         </div>
 
-        {err && <p className="text-red-400 text-sm mt-3">{err}</p>}
+        {err && <p className="text-red-500 text-sm mt-3">{err}</p>}
 
         <div className="flex justify-between mt-5">
           <button onClick={onDelete}
-            className="rounded-lg px-3 py-2 text-sm text-red-400 border border-red-900/60 hover:bg-red-950 transition">
+            className="border-[0.5px] border-line text-red-500 hover:bg-sunken rounded-lg px-3 py-2 text-sm transition">
             Delete
           </button>
           <div className="flex gap-2">
-            <button onClick={onClose}
-              className="rounded-lg px-3 py-2 text-sm border border-slate-700 hover:bg-slate-800 transition">
+            <button onClick={onClose} className="btn btn-soft">
               Cancel
             </button>
-            <button onClick={save}
-              className="rounded-lg px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 font-medium transition">
+            <button onClick={save} className="btn btn-primary">
               Save
             </button>
           </div>

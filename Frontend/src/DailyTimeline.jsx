@@ -1,16 +1,9 @@
 import { useRef, useState } from "react";
+import { IconCheck, IconCircle } from "@tabler/icons-react";
 import { snap, toMinutes, toTimeStr } from "./time";
 
 const HOUR_PX = 52;
 const MIN_DUR = 15;
-const COLORS = [
-  "bg-indigo-600/80 border-indigo-400",
-  "bg-emerald-600/80 border-emerald-400",
-  "bg-rose-600/80 border-rose-400",
-  "bg-amber-600/80 border-amber-400",
-  "bg-cyan-600/80 border-cyan-400",
-  "bg-violet-600/80 border-violet-400",
-];
 
 // Drag a block to move it, drag its top/bottom edge to resize, click to edit.
 export default function DailyTimeline({ items, onChange, onEditItem, onToggleDone }) {
@@ -67,9 +60,9 @@ export default function DailyTimeline({ items, onChange, onEditItem, onToggleDon
   };
 
   return (
-    <div className="flex rounded-xl border border-slate-800 bg-slate-900/50 overflow-y-auto max-h-[560px]">
+    <div className="card flex overflow-y-auto max-h-[560px]">
       {/* Hour gutter */}
-      <div className="w-16 shrink-0 text-right pr-2 text-xs text-slate-500 select-none">
+      <div className="w-16 shrink-0 text-right pr-2 text-[11px] text-faint select-none">
         {Array.from({ length: 24 }, (_, h) => (
           <div key={h} style={{ height: HOUR_PX }} className="relative">
             <span className="absolute -top-2 right-2">{toTimeStr(h * 60)}</span>
@@ -80,8 +73,7 @@ export default function DailyTimeline({ items, onChange, onEditItem, onToggleDon
       {/* Grid */}
       <div className="relative flex-1" style={{ height: 24 * HOUR_PX }}>
         {Array.from({ length: 24 }, (_, h) => (
-          <div key={h} style={{ height: HOUR_PX }}
-            className="border-t border-slate-800/70" />
+          <div key={h} style={{ height: HOUR_PX }} className="border-t-[0.5px] border-line" />
         ))}
 
         {items.map((it, i) => {
@@ -91,7 +83,7 @@ export default function DailyTimeline({ items, onChange, onEditItem, onToggleDon
           return (
             <div
               key={i}
-              className={`absolute left-1 right-2 rounded-lg border-l-4 px-2 py-1 text-sm text-white shadow-md cursor-grab active:cursor-grabbing select-none ${COLORS[i % COLORS.length]} ${live ? "opacity-90 ring-2 ring-white/40" : ""} ${it.done && !live ? "opacity-40" : ""}`}
+              className={`timeblock cat-${i % 6} absolute left-1 right-2 rounded-lg px-2 py-1 text-sm cursor-grab active:cursor-grabbing select-none ${live ? "ring-2 ring-accent-line" : ""} ${it.done && !live ? "opacity-50" : ""}`}
               style={{
                 top: (start / 60) * HOUR_PX,
                 height: Math.max(((end - start) / 60) * HOUR_PX, 20),
@@ -109,19 +101,15 @@ export default function DailyTimeline({ items, onChange, onEditItem, onToggleDon
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); onToggleDone(i); }}
                 title={it.done ? "Mark not done" : "Mark done"}
-                className={`absolute top-1 right-1 h-4 w-4 rounded-full border flex items-center justify-center text-[10px] leading-none transition ${
-                  it.done
-                    ? "bg-emerald-400 border-emerald-200 text-emerald-950"
-                    : "border-white/60 hover:bg-white/20"
-                }`}
+                className={`absolute top-1 right-1 grid place-items-center transition ${it.done ? "text-success" : "text-faint hover:text-ink"}`}
               >
-                {it.done ? "✓" : ""}
+                {it.done ? <IconCheck size={14} stroke={2} /> : <IconCircle size={14} stroke={1.75} />}
               </button>
               <div className={`font-medium truncate pr-5 ${it.done ? "line-through" : ""}`}>
                 {it.name}
               </div>
               {end - start >= 45 && (
-                <div className="text-xs text-white/80">
+                <div className="text-xs opacity-75">
                   {toTimeStr(start)} – {toTimeStr(end)}
                 </div>
               )}

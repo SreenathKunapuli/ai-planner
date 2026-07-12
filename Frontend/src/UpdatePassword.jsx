@@ -21,29 +21,29 @@ export default function UpdatePassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-8 shadow-xl">
-        <h1 className="text-xl font-semibold text-white text-center mb-1">Set a new password</h1>
-        <p className="text-slate-400 text-sm text-center mb-6">Then you'll be signed right in.</p>
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
+      <div className="card w-full max-w-sm p-8">
+        <h1 className="text-xl font-medium text-ink text-center mb-1">Set a new password</h1>
+        <p className="text-dim text-sm text-center mb-6">Then you'll be signed right in.</p>
         <form onSubmit={submit} className="space-y-3">
           <input
             type="password" required minLength={6} value={password} placeholder="New password"
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="field"
           />
           <input
             type="password" required minLength={6} value={confirm} placeholder="Confirm password"
             onChange={(e) => setConfirm(e.target.value)}
-            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="field"
           />
           <button
             type="submit" disabled={busy}
-            className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium py-2.5 transition"
+            className="btn btn-primary w-full disabled:opacity-50"
           >
             {busy ? "..." : "Update password"}
           </button>
         </form>
-        {err && <p className="text-red-400 text-sm mt-3 text-center">{err}</p>}
+        {err && <p className="text-red-500 text-sm mt-3 text-center">{err}</p>}
       </div>
     </div>
   );

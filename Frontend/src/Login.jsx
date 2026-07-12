@@ -37,13 +37,13 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-8 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
+      <div className="card w-full max-w-sm p-8">
         <div className="flex items-center justify-center gap-2.5 mb-1">
           <img src="/favicon.svg" alt="" className="h-7 w-7" />
-          <h1 className="text-2xl font-semibold text-white text-center">AI Planner</h1>
+          <h1 className="text-2xl font-medium text-ink text-center">AI Planner</h1>
         </div>
-        <p className="text-slate-400 text-sm text-center mt-1 mb-6">
+        <p className="text-dim text-sm text-center mt-1 mb-6">
           {mode === "reset"
             ? "We'll email you a link to reset your password"
             : "Let AI turn your tasks into a schedule"}
@@ -53,7 +53,7 @@ export default function Login() {
           <>
             <button
               onClick={signInWithGoogle}
-              className="w-full flex items-center justify-center gap-3 rounded-lg bg-white text-slate-800 font-medium py-2.5 hover:bg-slate-100 transition"
+              className="w-full flex items-center justify-center gap-3 rounded-md bg-surface border-[0.5px] border-line text-ink font-medium py-2.5 hover:bg-sunken transition"
             >
               <svg width="18" height="18" viewBox="0 0 48 48">
                 <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
@@ -65,9 +65,9 @@ export default function Login() {
             </button>
 
             <div className="flex items-center gap-3 my-5">
-              <div className="h-px flex-1 bg-slate-800" />
-              <span className="text-xs text-slate-500">or use email</span>
-              <div className="h-px flex-1 bg-slate-800" />
+              <div className="h-px flex-1 bg-line" />
+              <span className="text-xs text-faint">or use email</span>
+              <div className="h-px flex-1 bg-line" />
             </div>
           </>
         )}
@@ -76,18 +76,18 @@ export default function Login() {
           <input
             type="email" required value={email} placeholder="Email"
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="field"
           />
           {mode !== "reset" && (
             <input
               type="password" required minLength={6} value={password} placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="field"
             />
           )}
           <button
             type="submit" disabled={busy}
-            className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium py-2.5 transition"
+            className="btn btn-primary w-full disabled:opacity-50"
           >
             {busy ? "..."
               : mode === "signin" ? "Sign in"
@@ -97,7 +97,7 @@ export default function Login() {
         </form>
 
         {msg && (
-          <p className={`text-sm mt-3 text-center ${msg.isError ? "text-red-400" : "text-emerald-400"}`}>
+          <p className={`text-sm mt-3 text-center ${msg.isError ? "text-red-500" : "text-success"}`}>
             {msg.text}
           </p>
         )}
@@ -105,13 +105,13 @@ export default function Login() {
         <div className="mt-5 space-y-2 text-center">
           {mode === "signin" && (
             <button onClick={() => switchMode("reset")}
-              className="block w-full text-sm text-slate-500 hover:text-white transition">
+              className="block w-full text-sm text-faint hover:text-ink transition">
               Forgot password?
             </button>
           )}
           <button
             onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}
-            className="block w-full text-sm text-slate-400 hover:text-white transition"
+            className="block w-full text-sm text-faint hover:text-ink transition"
           >
             {mode === "signin" ? "No account? Sign up" : "Have an account? Sign in"}
           </button>
